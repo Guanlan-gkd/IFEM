@@ -62,28 +62,37 @@ def search(img, change_grid, point, h ,w, o_new):
     A = np.reshape(spaceRect,(-1,4,2))
     B = np.reshape(spacePt,(-1,4,2))
     
-    temp = B[:,:,0]
-    B[:,:,0] = -B[:,:,1]
-    B[:,:,1] = temp
+    # temp = B[:,:,0]
+    # B[:,:,0] = -B[:,:,1]
+    # B[:,:,1] = temp
     
     xP = np.zeros(((A.shape)[0],4))
     
-    xP[:,0] = np.multiply(A[:,0,0],B[:,0,0]) + np.multiply(A[:,0,1],B[:,0,1]) 
-    xP[:,1] = np.multiply(A[:,1,0],B[:,1,0]) + np.multiply(A[:,1,1],B[:,1,1]) 
-    xP[:,2] = np.multiply(A[:,2,0],B[:,2,0]) + np.multiply(A[:,2,1],B[:,2,1]) 
-    xP[:,3] = np.multiply(A[:,3,0],B[:,3,0]) + np.multiply(A[:,3,1],B[:,3,1]) 
+    xP[:,0] = np.multiply(A[:,0,0],B[:,0,1]) - np.multiply(A[:,0,1],B[:,0,0]) 
+    xP[:,1] = np.multiply(A[:,1,0],B[:,1,1]) - np.multiply(A[:,1,1],B[:,1,0]) 
+    xP[:,2] = np.multiply(A[:,2,0],B[:,2,1]) - np.multiply(A[:,2,1],B[:,2,0]) 
+    xP[:,3] = np.multiply(A[:,3,0],B[:,3,1]) - np.multiply(A[:,3,1],B[:,3,0]) 
 
     L = (xP >= 0) 
     R = (xP <= 0)
     
-    L1 = np.multiply(L[:,0],L[:,1],L[:,2],L[:,3])
-    R1 = np.multiply(R[:,0],R[:,1],R[:,2],R[:,3])
+    L1 = np.multiply(np.multiply(L[:,0],L[:,1]),np.multiply(L[:,2],L[:,3]))
+    R1 = np.multiply(np.multiply(R[:,0],R[:,1]),np.multiply(R[:,2],R[:,3]))
     
     Result = np.reshape(np.logical_or(L1, R1), ((L1.shape)[0],1))
     
+    switch = 0
+    
     for i in range(0, (Result.shape)[0]):
-        if Result[i][0]> 0:
-            im_out[o_new[i,0], o_new[i,1], :] = img[o_new[i,0], o_new[i,1], :]
+        
+        if Result[i][0] > 0 and switch == 0:
+            # print("pt", (point),"new pt:" ,(o_new[i,0], o_new[i,1]))
+            R_sum = 1 * Result
+            
+            print(np.sum(R_sum))
+            im_out[int(o_new[i,0]), int(o_new[i,1]), :] = img[int(o_new[i,0]), int(o_new[i,1]), :]
+            switch = 0
+
     
     
 def fillin(flow, img, o_grid, num_jobs):
@@ -99,3 +108,4 @@ def fillin(flow, img, o_grid, num_jobs):
     Parallel(n_jobs=num_jobs)(delayed(search)(img, change_grid, point, h ,w, o_new) for point in o_new)
     print(time.time() - t1)  
 
+fillin(flow, img, o_grid, num_jobs = 8)
